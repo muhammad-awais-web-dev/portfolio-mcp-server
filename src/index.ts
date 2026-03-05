@@ -32,6 +32,33 @@ async function callTool(tool: string, parameters: Record<string, unknown> = {}) 
   return json.data;
 }
 
+// Cache the profile_id so write operations can inject it automatically
+let _profileId: string | null = null;
+async function getProfileId(): Promise<string> {
+  if (_profileId) return _profileId;
+  const profile = await callTool('get_profile') as { id: string };
+  _profileId = profile.id;
+  return _profileId;
+}
+
+const CREATE_TOOLS = new Set([
+  'create_project', 'create_skill', 'create_certification',
+  'create_education', 'create_experience', 'create_testimonial',
+]);
+
+async function callToolWithAuth(tool: string, parameters: Record<string, unknown> = {}) {
+  if (CREATE_TOOLS.has(tool)) {
+    const id = await getProfileId();
+    // Projects use owner_id; all others use profile_id
+    if (tool === 'create_project' && !parameters.owner_id) {
+      parameters = { ...parameters, owner_id: id };
+    } else if (tool !== 'create_project' && !parameters.profile_id) {
+      parameters = { ...parameters, profile_id: id };
+    }
+  }
+  return callTool(tool, parameters);
+}
+
 const fmt = (data: unknown) => JSON.stringify(data, null, 2);
 
 // ── MCP Server ──────────────────────────────────────────────────────────────
@@ -170,7 +197,7 @@ server.tool(
     instagram: z.string().url().optional(),
     youtube: z.string().url().optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('update_profile', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('update_profile', p)) }] })
 );
 
 server.tool(
@@ -190,7 +217,7 @@ server.tool(
     skill_ids: z.array(z.number()).optional(),
     category_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('create_project', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('create_project', p)) }] })
 );
 
 server.tool(
@@ -212,14 +239,14 @@ server.tool(
     skill_ids: z.array(z.number()).optional(),
     category_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('update_project', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('update_project', p)) }] })
 );
 
 server.tool(
   'delete_project',
   'Delete a project by ID. Requires write permission.',
   { id: z.number().describe('Project ID') },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('delete_project', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('delete_project', p)) }] })
 );
 
 server.tool(
@@ -231,7 +258,7 @@ server.tool(
     body_html: z.string().optional(),
     category_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('create_skill', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('create_skill', p)) }] })
 );
 
 server.tool(
@@ -244,14 +271,14 @@ server.tool(
     body_html: z.string().optional(),
     category_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('update_skill', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('update_skill', p)) }] })
 );
 
 server.tool(
   'delete_skill',
   'Delete a skill by ID. Requires write permission.',
   { id: z.number().describe('Skill ID') },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('delete_skill', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('delete_skill', p)) }] })
 );
 
 server.tool(
@@ -268,7 +295,7 @@ server.tool(
     skill_ids: z.array(z.number()).optional(),
     project_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('create_certification', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('create_certification', p)) }] })
 );
 
 server.tool(
@@ -286,14 +313,14 @@ server.tool(
     skill_ids: z.array(z.number()).optional(),
     project_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('update_certification', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('update_certification', p)) }] })
 );
 
 server.tool(
   'delete_certification',
   'Delete a certification by ID. Requires write permission.',
   { id: z.number().describe('Certification ID') },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('delete_certification', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('delete_certification', p)) }] })
 );
 
 server.tool(
@@ -312,7 +339,7 @@ server.tool(
     skill_ids: z.array(z.number()).optional(),
     project_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('create_education', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('create_education', p)) }] })
 );
 
 server.tool(
@@ -332,14 +359,14 @@ server.tool(
     skill_ids: z.array(z.number()).optional(),
     project_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('update_education', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('update_education', p)) }] })
 );
 
 server.tool(
   'delete_education',
   'Delete an education entry by ID. Requires write permission.',
   { id: z.number().describe('Education ID') },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('delete_education', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('delete_education', p)) }] })
 );
 
 server.tool(
@@ -357,7 +384,7 @@ server.tool(
     skill_ids: z.array(z.number()).optional(),
     project_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('create_experience', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('create_experience', p)) }] })
 );
 
 server.tool(
@@ -376,14 +403,14 @@ server.tool(
     skill_ids: z.array(z.number()).optional(),
     project_ids: z.array(z.number()).optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('update_experience', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('update_experience', p)) }] })
 );
 
 server.tool(
   'delete_experience',
   'Delete a work experience entry by ID. Requires write permission.',
   { id: z.number().describe('Experience ID') },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('delete_experience', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('delete_experience', p)) }] })
 );
 
 server.tool(
@@ -400,7 +427,7 @@ server.tool(
     is_featured: z.boolean().optional(),
     is_active: z.boolean().optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('create_testimonial', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('create_testimonial', p)) }] })
 );
 
 server.tool(
@@ -418,14 +445,14 @@ server.tool(
     is_featured: z.boolean().optional(),
     is_active: z.boolean().optional(),
   },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('update_testimonial', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('update_testimonial', p)) }] })
 );
 
 server.tool(
   'delete_testimonial',
   'Delete a testimonial by ID. Requires write permission.',
   { id: z.number().describe('Testimonial ID') },
-  async (p) => ({ content: [{ type: 'text', text: fmt(await callTool('delete_testimonial', p)) }] })
+  async (p) => ({ content: [{ type: 'text', text: fmt(await callToolWithAuth('delete_testimonial', p)) }] })
 );
 
 // ── Start ────────────────────────────────────────────────────────────────────
