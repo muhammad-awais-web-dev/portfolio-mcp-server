@@ -99,6 +99,32 @@ Edit `~/.cursor/mcp.json`:
 
 ---
 
+## Connect to VS Code
+
+Requires VS Code 1.99+ with the **GitHub Copilot** extension.
+
+Create or edit `.vscode/mcp.json` in your workspace (or add to your user `settings.json` under `"mcp"`):
+
+```json
+{
+  "servers": {
+    "portfolio": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "/path/to/portfolio-mcp-server/src/index.ts"],
+      "env": {
+        "PORTFOLIO_URL": "https://your-portfolio-domain.com",
+        "MCP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+Open the **Copilot Chat** panel, switch to **Agent** mode, and the `portfolio` server will appear under available tools.
+
+---
+
 ## Connect to GitHub Copilot CLI
 
 Edit `~/.copilot/mcp-config.json`:
