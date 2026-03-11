@@ -4,7 +4,7 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server that c
 
 ## What it does
 
-Exposes all 26 portfolio tools over stdio so any MCP-compatible AI client can:
+Exposes all 32 portfolio tools over stdio so any MCP-compatible AI client can:
 - Read your profile, projects, skills, certifications, education, experience, and testimonials
 - Create, update, and delete any portfolio item (with a write-enabled API key)
 
@@ -43,6 +43,12 @@ MCP_API_KEY=your_api_key_here
 
 ```bash
 npm start
+```
+
+For development with auto-reload:
+
+```bash
+npm run dev
 ```
 
 The server communicates over **stdio** — it won't print anything until an MCP client connects. Startup messages appear on stderr.
@@ -115,7 +121,7 @@ Edit `~/.copilot/mcp-config.json`:
 
 ---
 
-## Available Tools (26 total)
+## Available Tools (32 total)
 
 ### Read tools — any API key
 
